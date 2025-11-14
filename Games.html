@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Game Kuis Google Sheet</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f1f1f1;
+        padding: 20px;
+        text-align: center;
+    }
+    #gameBox {
+        background: white;
+        padding: 20px;
+        max-width: 500px;
+        margin: auto;
+        border-radius: 12px;
+        box-shadow: 0 0 10px #ccc;
+    }
+    .option {
+        display: block;
+        margin: 10px 0;
+        padding: 15px;
+        border-radius: 8px;
+        background: #eaeaea;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .option:hover {
+        background: #d1d1d1;
+    }
+    #nextBtn {
+        margin-top: 20px;
+        padding: 12px 20px;
+        font-size: 16px;
+        border: none;
+        background: #4CAF50;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<h2>Game Kuis Google Sheet</h2>
+
+<div id="gameBox">
+    <p>Loading soal...</p>
+</div>
+
+<script>
+// ==============================
+// CONFIG: ID Google Sheet kamu
+// ==============================
+const SHEET_ID = "1RcR33GirWqzXGhCYdONy5yeqrquSbGbvUM_YVKlz6xE";
+
+// URL JSON Sheet
+const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+
+let soalData = [];
+let indexSoal = 0;
+let skor = 0;
+
+// Ambil data dari Google Sheet
+fetch(URL)
+    .then(res => res.text())
+    .then(text => {
+        const json = JSON.parse(text.substr(47).slice(0, -2));
+        soalData = json.table.rows.map(r => ({
+            soal: r.c[0]?.v || "",
+            A: r.c[1]?.v || "",
+            B: r.c[2]?.v || "",
+            C: r.c[3]?.v || "",
+            D: r.c[4]?.v || "",
+            kunci: r.c[5]?.v || ""
+        }));
+        tampilSoal();
+    });
+
+// Tampilkan soal
+function tampilSoal() {
+    if (indexSoal >= soalData.length) {
+        document.getElementById("gameBox").innerHTML =
+            `<h3>Permainan selesai!</h3>
+             <p>Skor kamu: <b>${skor}</b></p>`;
+        return;
+    }
+
+    const s = soalData[indexSoal];
+
+    document.getElementById("gameBox").innerHTML = `
+        <h3>Soal ${indexSoal + 1}</h3>
+        <p>${s.soal}</p>
+
+        <div class="option" onclick="jawab('A')">A. ${s.A}</div>
+        <div class="option" onclick="jawab('B')">B. ${s.B}</div>
+        <div class="option" onclick="jawab('C')">C. ${s.C}</div>
+        <div class="option" onclick="jawab('D')">D. ${s.D}</div>
+        
+        <button id="nextBtn" style="display:none" onclick="next()">Soal berikutnya</button>
+    `;
+}
+
+// Cek jawaban
+function jawab(pilihan) {
+    const kunci = soalData[indexSoal].kunci;
+
+    if (pilihan === kunci) {
+        alert("Benar!");
+        skor++;
+    } else {
+        alert("Salah! Kunci: " + kunci);
+    }
+
+    document.getElementById("nextBtn").style.display = "block";
+}
+
+// Lanjut soal
+function next() {
+    indexSoal++;
+    tampilSoal();
+}
+</script>
+
+</body>
+</html>
