@@ -1,129 +1,244 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Game Kuis Google By Ozi Syaputra</title>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #f1f1f1;
-        padding: 20px;
-        text-align: center;
-    }
-    #gameBox {
-        background: white;
-        padding: 20px;
-        max-width: 500px;
-        margin: auto;
-        border-radius: 12px;
-        box-shadow: 0 0 10px #ccc;
-    }
-    .option {
-        display: block;
-        margin: 10px 0;
-        padding: 15px;
-        border-radius: 8px;
-        background: #eaeaea;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-    .option:hover {
-        background: #d1d1d1;
-    }
-    #nextBtn {
-        margin-top: 20px;
-        padding: 12px 20px;
-        font-size: 16px;
-        border: none;
-        background: #4CAF50;
-        color: white;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Balap Robot Cerdas — Versi Siap Pakai</title>
+  <style>
+    :root{--track-height:70px;--robot-size:60px}
+    body{font-family:Inter,Segoe UI,Arial;line-height:1.3;margin:20px;background:#f5f7fb;color:#111}
+    h1{font-size:20px;margin-bottom:6px}
+    .container{max-width:980px;margin:0 auto}
+
+    /* TRACK */
+    .track{background:linear-gradient(180deg,#e9eef8,#fff);padding:12px;border-radius:10px;box-shadow:0 4px 14px rgba(20,30,60,0.06)}
+    .lane{height:var(--track-height);position:relative;border-radius:8px;margin:10px 0;background:linear-gradient(90deg,#fff,#f1f6ff);overflow:hidden;border:1px dashed rgba(0,0,0,0.04)}
+    .finish{position:absolute;right:8px;top:6px;bottom:6px;width:6px;background:#111;border-radius:3px;opacity:0.12}
+
+    .robot{width:var(--robot-size);height:var(--robot-size);line-height:var(--robot-size);text-align:center;border-radius:8px;position:absolute;left:8px;top:5px;transform:translateY(0);transition:left 600ms ease, transform 200ms;box-shadow:0 6px 14px rgba(20,30,60,0.12);font-weight:600}
+    .robot span{display:block;font-size:12px}
+    #robot1{background:#0ea5e9;color:white}
+    #robot2{background:#ef4444;color:white}
+    #robot3{background:#f59e0b;color:white}
+    #robot4{background:#10b981;color:white}
+
+    /* Controls */
+    .controls{display:flex;gap:8px;align-items:center;margin-top:12px}
+    button{padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:600}
+    .btn-primary{background:#2563eb;color:white}
+    .btn-ghost{background:transparent;border:1px solid rgba(0,0,0,0.06)}
+
+    /* Question area */
+    .qa{margin-top:16px;padding:12px;border-radius:8px;background:linear-gradient(180deg,#fff,#fbfdff);box-shadow:0 2px 8px rgba(20,30,60,0.04)}
+    .opsi{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+    .opsi button{padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);background:white;text-align:left}
+
+    .players{display:flex;gap:8px;margin-top:8px}
+    .player-btn{padding:6px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);cursor:pointer}
+    .player-btn.active{outline:3px solid rgba(37,99,235,0.18)}
+
+    .meta{margin-top:10px;color:#334155;font-size:13px}
+
+    footer{margin-top:18px;color:#475569;font-size:13px}
+
+    @media (max-width:640px){.opsi{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h1>Balap Robot Cerdas — Versi Siap Pakai</h1>
+    <div class="meta">Masukkan Google Sheet ID di URL sebagai <code>?id=ID_SHEET_ANDA</code>. Contoh: <em>.../index.html?id=1abcD...</em></div>
 
-<h2>Game Kuis Google By Ozi Syaputra</h2>
+    <div class="track" id="track">
+      <div class="lane" id="lane1"><div class="robot" id="robot1">🤖<span>Player 1</span></div><div class="finish"></div></div>
+      <div class="lane" id="lane2"><div class="robot" id="robot2">🤖<span>Player 2</span></div><div class="finish"></div></div>
+      <div class="lane" id="lane3"><div class="robot" id="robot3">🤖<span>Player 3</span></div><div class="finish"></div></div>
+      <div class="lane" id="lane4"><div class="robot" id="robot4">🤖<span>Player 4</span></div><div class="finish"></div></div>
+    </div>
 
-<div id="gameBox">
-    <p>Loading soal...</p>
-</div>
+    <div class="controls">
+      <button id="mulaiBtn" class="btn-primary">Muat & Mulai</button>
+      <button id="soalBaruBtn" class="btn-ghost">Soal Berikutnya</button>
+      <label style="margin-left:auto">Langkah per benar:
+        <input id="langkahInput" type="number" value="80" style="width:80px;margin-left:8px;padding:6px;border-radius:6px;border:1px solid #e2e8f0" /> px
+      </label>
+    </div>
 
-<script>
-// ==============================
-// CONFIG: ID Google Sheet kamu
-// ==============================
-const SHEET_ID = "1RcR33GirWqzXGhCYdONy5yeqrquSbGbvUM_YVKlz6xE";
+    <div class="qa" id="qa">
+      <div><strong id="qtext">Tekan "Muat & Mulai" untuk menampilkan soal.</strong></div>
 
-// URL JSON Sheet
-const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+      <div class="players" style="margin-top:10px">
+        <div class="player-btn" data-player="0" id="pbtn1">P1 Biru</div>
+        <div class="player-btn" data-player="1" id="pbtn2">P2 Merah</div>
+        <div class="player-btn" data-player="2" id="pbtn3">P3 Kuning</div>
+        <div class="player-btn" data-player="3" id="pbtn4">P4 Hijau</div>
+      </div>
 
-let soalData = [];
-let indexSoal = 0;
-let skor = 0;
+      <div class="opsi" id="opsiContainer" style="margin-top:12px"></div>
 
-// Ambil data dari Google Sheet
-fetch(URL)
-    .then(res => res.text())
-    .then(text => {
-        const json = JSON.parse(text.substr(47).slice(0, -2));
-        soalData = json.table.rows.map(r => ({
-            soal: r.c[0]?.v || "",
-            A: r.c[1]?.v || "",
-            B: r.c[2]?.v || "",
-            C: r.c[3]?.v || "",
-            D: r.c[4]?.v || "",
-            kunci: r.c[5]?.v || ""
-        }));
-        tampilSoal();
+      <div class="meta" id="status"></div>
+    </div>
+
+    <footer>
+      Format Google Sheet yang dibutuhkan (kolom pertama header):<br>
+      <code>soal | A | B | C | D | kunci</code><br>
+      Kunci gunakan huruf A/B/C/D persis.
+    </footer>
+  </div>
+
+  <script>
+    // -- UTIL
+    function getSheetIdFromURL(){
+      const p = new URLSearchParams(location.search);
+      return p.get('id') || '';
+    }
+
+    // -- GLOBAL STATE
+    let soalData = [];
+    let posisi = [8,8,8,8]; // left in px
+    let langkah = 80; // per jawaban benar
+    let selectedPlayer = 0;
+
+    // -- DOM refs
+    const qtext = document.getElementById('qtext');
+    const opsiContainer = document.getElementById('opsiContainer');
+    const status = document.getElementById('status');
+    const langkahInput = document.getElementById('langkahInput');
+    const pbtns = Array.from(document.querySelectorAll('.player-btn'));
+
+    pbtns.forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        pbtns.forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedPlayer = Number(btn.dataset.player);
+      });
+    });
+    // default active
+    document.getElementById('pbtn1').classList.add('active');
+
+    // Load soal from Google Sheets (gviz JSON)
+    async function loadFromSheet(sheetId){
+      soalData = [];
+      try{
+        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
+        const res = await fetch(url);
+        const text = await res.text();
+        // strip google wrapper
+        const json = JSON.parse(text.replace(/^[\s\S]*?\(/,'').replace(/\);?\s*$/,''));
+        if(!json.table || !json.table.rows) throw new Error('Format sheet tidak sesuai.');
+
+        json.table.rows.forEach(r=>{
+          const cells = r.c || [];
+          const s = {
+            soal: (cells[0] && cells[0].v) ? String(cells[0].v) : '',
+            A: (cells[1] && cells[1].v) ? String(cells[1].v) : '',
+            B: (cells[2] && cells[2].v) ? String(cells[2].v) : '',
+            C: (cells[3] && cells[3].v) ? String(cells[3].v) : '',
+            D: (cells[4] && cells[4].v) ? String(cells[4].v) : '',
+            kunci: (cells[5] && cells[5].v) ? String(cells[5].v).toUpperCase() : ''
+          };
+          if(s.soal) soalData.push(s);
+        });
+        return true;
+      }catch(err){
+        console.error(err);
+        alert('Gagal memuat sheet. Pastikan ID benar dan sheet dipublikasi (Share -> Anyone with link).');
+        return false;
+      }
+    }
+
+    function pickRandomSoal(){
+      if(soalData.length===0) return null;
+      const idx = Math.floor(Math.random()*soalData.length);
+      return soalData[idx];
+    }
+
+    function showSoal(obj){
+      if(!obj){ qtext.innerText='Data soal kosong.'; opsiContainer.innerHTML=''; return; }
+      qtext.innerHTML = obj.soal;
+      opsiContainer.innerHTML = '';
+      ['A','B','C','D'].forEach(k=>{
+        const b = document.createElement('button');
+        b.innerHTML = `<strong>${k}.</strong> ${obj[k]}`;
+        b.onclick = ()=> handleAnswer(k,obj.kunci);
+        opsiContainer.appendChild(b);
+      });
+      status.innerText = `Soal dimuat — pilih pemain (kiri atas) lalu klik jawaban. Pemain terpilih: P${selectedPlayer+1}`;
+    }
+
+    // Move robot; detect finish
+    function moveRobot(playerIndex, pixels){
+      const robot = document.getElementById('robot'+(playerIndex+1));
+      posisi[playerIndex] += pixels;
+      robot.style.left = posisi[playerIndex] + 'px';
+
+      // detect finish: compute lane width
+      const lane = document.getElementById('lane'+(playerIndex+1));
+      const laneRect = lane.getBoundingClientRect();
+      const robotRect = robot.getBoundingClientRect();
+      if(robotRect.right >= laneRect.right - 12){
+        // finish
+        announceWinner(playerIndex+1);
+      }
+    }
+
+    let currentSoal = null;
+    function handleAnswer(jawaban, kunci){
+      langkah = Number(langkahInput.value) || 80;
+      if(!kunci){ status.innerText = 'Soal tidak memiliki kunci.'; return; }
+      if(jawaban === kunci){
+        status.innerText = `Benar! P${selectedPlayer+1} maju ${langkah}px`;
+        moveRobot(selectedPlayer, langkah);
+      }else{
+        status.innerText = `Salah. Jawaban benar: ${kunci}. Tidak ada gerak.`;
+      }
+      // tampil soal baru setelah delay
+      setTimeout(()=>{
+        currentSoal = pickRandomSoal();
+        showSoal(currentSoal);
+      }, 700);
+    }
+
+    function announceWinner(num){
+      alert('P' + num + ' MENANG!');
+      // disable buttons
+      opsiContainer.querySelectorAll('button').forEach(b=>b.disabled=true);
+      document.getElementById('soalBaruBtn').disabled = true;
+    }
+
+    // Controls
+    document.getElementById('mulaiBtn').addEventListener('click', async ()=>{
+      const sheetId = getSheetIdFromURL();
+      if(!sheetId){ alert('Masukkan ID Sheet pada URL sebagai ?id=ID_SHEET_ANDA'); return; }
+      const ok = await loadFromSheet(sheetId);
+      if(ok){
+        // reset positions
+        posisi = [8,8,8,8];
+        for(let i=1;i<=4;i++){ document.getElementById('robot'+i).style.left = posisi[i-1] + 'px'; }
+        document.getElementById('soalBaruBtn').disabled = false;
+        currentSoal = pickRandomSoal();
+        showSoal(currentSoal);
+      }
     });
 
-// Tampilkan soal
-function tampilSoal() {
-    if (indexSoal >= soalData.length) {
-        document.getElementById("gameBox").innerHTML =
-            `<h3>Permainan selesai!</h3>
-             <p>Skor kamu: <b>${skor}</b></p>`;
-        return;
-    }
+    document.getElementById('soalBaruBtn').addEventListener('click', ()=>{
+      currentSoal = pickRandomSoal();
+      showSoal(currentSoal);
+    });
 
-    const s = soalData[indexSoal];
+    // Allow pressing 1-4 to select player quickly
+    window.addEventListener('keydown',(e)=>{
+      if(e.key>='1' && e.key<='4'){
+        const idx = Number(e.key)-1;
+        selectedPlayer = idx;
+        pbtns.forEach(b=>b.classList.remove('active'));
+        pbtns[idx].classList.add('active');
+      }
+    });
 
-    document.getElementById("gameBox").innerHTML = `
-        <h3>Soal ${indexSoal + 1}</h3>
-        <p>${s.soal}</p>
-
-        <div class="option" onclick="jawab('A')">A. ${s.A}</div>
-        <div class="option" onclick="jawab('B')">B. ${s.B}</div>
-        <div class="option" onclick="jawab('C')">C. ${s.C}</div>
-        <div class="option" onclick="jawab('D')">D. ${s.D}</div>
-        
-        <button id="nextBtn" style="display:none" onclick="next()">Soal berikutnya</button>
-    `;
-}
-
-// Cek jawaban
-function jawab(pilihan) {
-    const kunci = soalData[indexSoal].kunci;
-
-    if (pilihan === kunci) {
-        alert("Benar!");
-        skor++;
-    } else {
-        alert("Salah! Kunci: " + kunci);
-    }
-
-    document.getElementById("nextBtn").style.display = "block";
-}
-
-// Lanjut soal
-function next() {
-    indexSoal++;
-    tampilSoal();
-}
-</script>
-
+    // Pre-fill with the original example ID as hint (not required to work)
+    // You can remove the following line if you don't want default ID shown in URL
+    //console.log('Add ?id=YOUR_SHEET_ID to URL');
+  </script>
 </body>
 </html>
